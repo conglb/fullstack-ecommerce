@@ -146,6 +146,68 @@
           </div>
         </div>
       </div>
+      
+      <!-- Related Products Section -->
+      <div v-if="relatedProducts.length" class="mt-16">
+        <h2 class="text-2xl font-bold mb-6">Products related to this item</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          <div
+            v-for="item in relatedProducts"
+            :key="item.id"
+            class="border rounded-lg p-4 hover:shadow-lg transition"
+          >
+            <AppLink :to="`/products/${item.slug}`">
+              <img
+                :src="item.primaryImage"
+                :alt="item.name"
+                class="object-cover w-full h-40 mb-3 rounded"
+              />
+              <div class="font-medium text-lg truncate">{{ item.name }}</div>
+              <div class="text-violet-600 font-bold mt-1">
+                {{ item.currency }} {{ item.unitPrice }}
+              </div>
+            </AppLink>
+          </div>
+        </div>
+      </div>
+      <div v-else class="grid grid-cols-1 md:grid-cols-[4fr,3fr] gap-8 md:gap-12">
+        <p class="text-gray-500">No related products found.</p>
+      </div>
+
+      <!-- About this band / Products from this brand -->
+      <div v-if="product?.vendors" class="mt-16">
+        <h2 class="text-2xl font-bold mb-4">
+          About {{ product.vendors.name }}
+        </h2>
+        <p class="text-gray-700 mb-6" v-if="product.vendors.description">
+          {{ product.vendors.description }}
+        </p>
+        <h3 class="text-xl font-semibold mb-3">More from this brand</h3>
+        <div v-if="brandProducts.length" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          <div
+            v-for="item in brandProducts"
+            :key="item.id"
+            class="border rounded-lg p-4 hover:shadow-lg transition"
+          >
+            <AppLink :to="`/products/${item.slug}`">
+              <img
+                :src="item.primaryImage"
+                :alt="item.name"
+                class="object-cover w-full h-40 mb-3 rounded"
+              />
+              <div class="font-medium text-lg truncate">{{ item.name }}</div>
+              <div class="text-violet-600 font-bold mt-1">
+                {{ item.currency }} {{ item.unitPrice }}
+              </div>
+            </AppLink>
+          </div>
+        </div>
+        <div v-else>
+          <p class="text-gray-500">No other products from this brand.</p>
+        </div>
+      </div>
+
+
     </div>
     <!-- Skeleton -->
   </div>
@@ -180,6 +242,23 @@ type ProductWithVendorsCategories = QueryData<
 type CartItem = TablesInsert<'cartItems'>
 
 const product = ref<ProductWithVendorsCategories | null>(null)
+const relatedProducts = ref<ProductWithVendorsCategories[]>([])
+const relatedProductsQuery = supabase
+  .from('products')
+  .select('*,vendors(name),primaryCategory:primaryCategoryId(name)')
+  .eq('primaryCategoryId', product.value?.primaryCategoryId)
+  .neq('id', product.value?.id)
+  .limit(4)
+const relatedProductsData = await relatedProductsQuery
+
+const brandProducts = ref<ProductWithVendorsCategories[]>([])
+const brandProductsQuery = supabase
+  .from('products')
+  .select('*,vendors(name),primaryCategory:primaryCategoryId(name)')
+  .eq('vendorId', product.value?.vendorId)
+  .neq('id', product.value?.id)
+  .limit(4)
+const brandProductsData = await brandProductsQuery
 
 const showFullDescription = ref(false)
 const description = ref<HTMLElement | null>(null)
